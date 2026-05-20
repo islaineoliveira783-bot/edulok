@@ -1,267 +1,287 @@
 import pygame
-import sys
-import random
+from sys import exit
 
 pygame.init()
 
-LARGURA, ALTURA = 1000, 560
-tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Tela de Matérias")
+# ══════════════════════════════════════════════════════
+# CONFIGURAÇÕES
+# ══════════════════════════════════════════════════════
 
-clock = pygame.time.Clock()
+largura = 1280
+altura = 720
 
-AZUL_ESCURO = (3, 10, 35)
-AZUL_NEON = (35, 210, 255)
-AZUL_BOTAO = (5, 65, 130)
-BRANCO = (245, 248, 255)
-CINZA = (150, 160, 175)
-CINZA_CLARO = (205, 210, 220)
-TEXTO = (20, 30, 55)
-TEXTO_CLARO = (235, 245, 255)
+tela = pygame.display.set_mode((largura, altura))
+pygame.display.set_caption("Edulock")
 
-fonte_titulo = pygame.font.SysFont("arial", 32, bold=True)
-fonte_media = pygame.font.SysFont("arial", 24, bold=True)
-fonte_pequena = pygame.font.SysFont("arial", 18, bold=True)
-fonte_mini = pygame.font.SysFont("arial", 14, bold=True)
+relogio = pygame.time.Clock()
 
-robo_img = pygame.image.load("assets/images/robo.png.png").convert_alpha()
+# ══════════════════════════════════════════════════════
+# CORES
+# ══════════════════════════════════════════════════════
 
-largura_original = robo_img.get_width()
-altura_original = robo_img.get_height()
+FUNDO = (8, 12, 30)
 
-nova_altura = 380
-nova_largura = int(largura_original * (nova_altura / altura_original))
+AZUL = (45, 70, 180)
+AZUL_CLARO = (90, 120, 255)
 
-robo_img = pygame.transform.scale(robo_img, (nova_largura, nova_altura))
+BRANCO = (240, 240, 255)
 
-estrelas = []
-for i in range(120):
-    estrelas.append([
-        random.randint(0, LARGURA),
-        random.randint(0, ALTURA),
-        random.uniform(0.3, 1.4),
-        random.randint(1, 2)
-    ])
+# ══════════════════════════════════════════════════════
+# FONTES
+# ══════════════════════════════════════════════════════
 
-# Retângulos dos botões
-botao_editar_rect = pygame.Rect(0, 0, 0, 0)
-botao_portugues_rect = pygame.Rect(0, 0, 0, 0)
-botao_matematica_rect = pygame.Rect(0, 0, 0, 0)
-botao_biologia_rect = pygame.Rect(0, 0, 0, 0)
+fonte_titulo = pygame.font.SysFont("impact", 70)
+fonte_card = pygame.font.SysFont("impact", 32)
+
+# ══════════════════════════════════════════════════════
+# FUNDO
+# ══════════════════════════════════════════════════════
+
+img_fundo = pygame.image.load(
+    "assets/images/fundodatela.jpeg"
+).convert()
+
+img_fundo = pygame.transform.scale(
+    img_fundo,
+    (largura, altura)
+)
+
+# ══════════════════════════════════════════════════════
+# IMAGEM DO ROBÔ
+# ══════════════════════════════════════════════════════
+
+img_robo = pygame.image.load(
+    "assets/images/robo.png"
+).convert_alpha()
+
+img_robo = pygame.transform.smoothscale(
+    img_robo,
+    (220, 260)
+)
 
 
-def escrever(txt, x, y, cor, fonte):
-    img = fonte.render(txt, True, cor)
-    rect = img.get_rect(center=(x, y))
-    tela.blit(img, rect)
+# ══════════════════════════════════════════════════════
+# FUNÇÃO CARD
+# ══════════════════════════════════════════════════════
 
+def desenhar_card(
+    x,
+    y,
+    largura_card,
+    altura_card,
+    texto,
+    mouse,
+    imagem=None,
+    emoji=None
+):
 
-def fundo_animado():
-    tela.fill(AZUL_ESCURO)
+    rect = pygame.Rect(x, y, largura_card, altura_card)
 
-    for estrela in estrelas:
-        estrela[1] += estrela[2]
+    hover = rect.collidepoint(mouse)
 
-        if estrela[1] > ALTURA:
-            estrela[0] = random.randint(0, LARGURA)
-            estrela[1] = 0
+    escala = 1.04 if hover else 1
 
-        pygame.draw.circle(
-            tela,
-            (60, 190, 255),
-            (int(estrela[0]), int(estrela[1])),
-            estrela[3]
+    nova_largura = int(largura_card * escala)
+    nova_altura = int(altura_card * escala)
+
+    x = x - (nova_largura - largura_card)//2
+    y = y - (nova_altura - altura_card)//2
+
+    rect_anim = pygame.Rect(
+        x,
+        y,
+        nova_largura,
+        nova_altura
+    )
+
+    # brilho
+    glow = pygame.Surface(
+        (nova_largura + 20, nova_altura + 20),
+        pygame.SRCALPHA
+    )
+
+    pygame.draw.rect(
+        glow,
+        (80, 120, 255, 90),
+        glow.get_rect(),
+        border_radius=25
+    )
+
+    tela.blit(glow, (x - 10, y - 10))
+
+    # fundo do card
+    fundo = pygame.Surface(
+        (nova_largura, nova_altura),
+        pygame.SRCALPHA
+    )
+
+    pygame.draw.rect(
+        fundo,
+        (15, 20, 50, 220),
+        fundo.get_rect(),
+        border_radius=25
+    )
+
+    tela.blit(fundo, (x, y))
+
+    # borda
+    pygame.draw.rect(
+        tela,
+        AZUL_CLARO if hover else AZUL,
+        rect_anim,
+        3,
+        border_radius=25
+    )
+
+    # imagem
+    if imagem:
+
+        img_rect = imagem.get_rect(
+            center=(x + nova_largura//2, y + 120)
         )
 
+        tela.blit(imagem, img_rect)
 
-def perfil_player(x, y):
-    global botao_editar_rect
+    # emoji
+    elif emoji:
 
-    largura = 245
-    altura = 105
+        fonte_emoji = pygame.font.SysFont(
+            "Segoe UI Emoji",
+            70
+        )
 
-    painel = pygame.Surface((largura, altura), pygame.SRCALPHA)
+        emoji_surf = fonte_emoji.render(
+            emoji,
+            True,
+            BRANCO
+        )
 
-    pygame.draw.rect(
-        painel,
-        (5, 25, 65, 190),
-        (0, 0, largura, altura),
-        border_radius=18
+        tela.blit(
+            emoji_surf,
+            emoji_surf.get_rect(
+                center=(x + nova_largura//2, y + 110)
+            )
+        )
+
+    # texto
+    txt = fonte_card.render(
+        texto,
+        True,
+        BRANCO
     )
 
-    tela.blit(painel, (x, y))
-
-    pygame.draw.rect(
-        tela,
-        AZUL_NEON,
-        (x, y, largura, altura),
-        2,
-        border_radius=18
+    tela.blit(
+        txt,
+        txt.get_rect(
+            center=(
+                x + nova_largura//2,
+                y + nova_altura - 40
+            )
+        )
     )
 
-    # ícone do perfil
-    pygame.draw.circle(tela, AZUL_NEON, (x + 43, y + 39), 25, 2)
-    pygame.draw.circle(tela, AZUL_NEON, (x + 43, y + 30), 8)
-    pygame.draw.arc(tela, AZUL_NEON, (x + 24, y + 40, 38, 28), 3.14, 0, 3)
-
-    escrever("ISLAINE", x + 125, y + 24, TEXTO_CLARO, fonte_pequena)
-    escrever("Nível 12", x + 118, y + 50, TEXTO_CLARO, fonte_mini)
-    escrever("Português: 3-12", x + 132, y + 70, TEXTO_CLARO, fonte_mini)
-
-    # barra de XP
-    pygame.draw.line(
-        tela,
-        CINZA_CLARO,
-        (x + 80, y + 90),
-        (x + 175, y + 90),
-        6
-    )
-
-    pygame.draw.line(
-        tela,
-        AZUL_NEON,
-        (x + 80, y + 90),
-        (x + 150, y + 90),
-        6
-    )
-
-    escrever("XP", x + 195, y + 90, TEXTO_CLARO, fonte_mini)
-
-    # botão editar personagem
-    botao_editar_rect = pygame.Rect(x + 200, y + 15, 32, 32)
-
-    pygame.draw.rect(
-        tela,
-        AZUL_BOTAO,
-        botao_editar_rect,
-        border_radius=9
-    )
-
-    pygame.draw.rect(
-        tela,
-        AZUL_NEON,
-        botao_editar_rect,
-        2,
-        border_radius=9
-    )
-
-    escrever("✎", x + 216, y + 31, BRANCO, fonte_pequena)
-
-
-def card(x, y, materia, nivel, bloqueado=False):
-    largura = 210
-    altura = 320
-
-    sombra = pygame.Surface((largura, altura), pygame.SRCALPHA)
-    pygame.draw.rect(
-        sombra,
-        (0, 0, 0, 90),
-        (8, 8, largura - 8, altura - 8),
-        border_radius=10
-    )
-    tela.blit(sombra, (x, y))
-
-    # card azul transparente
-    card_surface = pygame.Surface((largura, altura), pygame.SRCALPHA)
-
-    pygame.draw.rect(
-        card_surface,
-        (170, 220, 255, 165),
-        (0, 0, largura, altura),
-        border_radius=10
-    )
-
-    tela.blit(card_surface, (x, y))
-
-    pygame.draw.rect(
-        tela,
-        AZUL_NEON,
-        (x, y, largura, altura),
-        2,
-        border_radius=10
-    )
-
-    escrever(nivel, x + largura // 2, y + 35, TEXTO, fonte_media)
-
-    pygame.draw.line(tela, CINZA_CLARO, (x + 25, y + 70), (x + 185, y + 70), 6)
-    pygame.draw.line(tela, AZUL_BOTAO, (x + 25, y + 70), (x + 115, y + 70), 6)
-
-    escrever(materia, x + largura // 2, y + 135, TEXTO, fonte_titulo)
-
-    pygame.draw.line(tela, AZUL_BOTAO, (x + 25, y + 230), (x + 185, y + 230), 3)
-
-    if bloqueado:
-        cor_botao = (135, 145, 160)
-        texto_botao = "BLOQUEADO"
-    else:
-        cor_botao = AZUL_BOTAO
-        texto_botao = "COMEÇAR"
-
-    botao_rect = pygame.Rect(x + 30, y + 255, 150, 55)
-
-    pygame.draw.rect(
-        tela,
-        cor_botao,
-        botao_rect,
-        border_radius=25
-    )
-
-    pygame.draw.rect(
-        tela,
-        AZUL_NEON if not bloqueado else CINZA,
-        botao_rect,
-        2,
-        border_radius=25
-    )
-
-    escrever(texto_botao, x + largura // 2, y + 283, BRANCO, fonte_pequena)
-
-    return botao_rect
-
-
-def painel_robo(x, y):
-    largura = 190
-    altura = 420
-
-    pygame.draw.rect(tela, (5, 25, 65), (x, y, largura, altura), border_radius=20)
-    pygame.draw.rect(tela, AZUL_NEON, (x, y, largura, altura), 2, border_radius=20)
-
-    robo_x = x + (largura - robo_img.get_width()) // 2
-    robo_y = y + 20
-
-    tela.blit(robo_img, (robo_x, robo_y))
-
+# ══════════════════════════════════════════════════════
+# LOOP
+# ══════════════════════════════════════════════════════
 
 while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+
+    mouse = pygame.mouse.get_pos()
+
+    for evento in pygame.event.get():
+
+        if evento.type == pygame.QUIT:
             pygame.quit()
-            sys.exit()
+            exit()
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_pos = pygame.mouse.get_pos()
+    # fundo
+    tela.blit(img_fundo, (0, 0))
 
-            if botao_editar_rect.collidepoint(mouse_pos):
-                print("Abrir tela para editar personagem")
+    # ══════════════════════════════════════════════════
+    # TÍTULO
+    # ══════════════════════════════════════════════════
 
-            if botao_portugues_rect.collidepoint(mouse_pos):
-                print("Começar Português")
+    titulo = fonte_titulo.render(
+        "ESCOLHA SUA MISSÃO",
+        True,
+        BRANCO
+    )
 
-            if botao_matematica_rect.collidepoint(mouse_pos):
-                print("Matemática bloqueada")
+    tela.blit(
+        titulo,
+        titulo.get_rect(
+            center=(largura//2, 100)
+        )
+    )
 
-            if botao_biologia_rect.collidepoint(mouse_pos):
-                print("Biologia bloqueada")
+    # linha decorativa
+    pygame.draw.line(
+        tela,
+        AZUL_CLARO,
+        (300, 160),
+        (980, 160),
+        3
+    )
 
-    fundo_animado()
+    # ══════════════════════════════════════════════════
+    # CARDS
+    # ══════════════════════════════════════════════════
 
-    perfil_player(20, 15)
+    largura_card = 240
+    altura_card = 320
 
-    painel_robo(35, 125)
+    espaco = 30
 
-    botao_portugues_rect = card(270, 150, "Português", "1-12", False)
-    botao_matematica_rect = card(510, 150, "Matemática", "1-12", True)
-    botao_biologia_rect = card(750, 150, "Biologia", "1-12", True)
+    total = (largura_card * 4) + (espaco * 3)
 
-    pygame.display.flip()
-    clock.tick(60)
+    inicio_x = (largura - total) // 2
+
+    y = 220
+
+ # ROBÔ GRANDE NA ESQUERDA
+desenhar_card(
+    80,
+    210,
+    260,
+    420,
+    "ROBÔ",
+    mouse,
+    imagem=img_robo
+)
+
+# PORTUGUÊS
+desenhar_card(
+    390,
+    260,
+    230,
+    300,
+    "PORTUGUÊS",
+    mouse,
+    emoji="📘"
+)
+
+# MATEMÁTICA
+desenhar_card(
+    660,
+    260,
+    230,
+    300,
+    "MATEMÁTICA",
+    mouse,
+    emoji="🔢"
+)
+
+# MONITOR
+desenhar_card(
+    930,
+    260,
+    230,
+    300,
+    "MONITOR",
+    mouse,
+    emoji="🧑‍🏫"
+)
+
+pygame.display.update()
+
+relogio.tick(60)
